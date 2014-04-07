@@ -1,0 +1,222 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <title>California</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width">
+        <link rel="shortcut icon" href="/favicon.ico">
+        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+        <!-- build:css styles/vendor.css -->
+        <!-- bower:css -->
+        <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+        <!-- endbower -->
+        <!-- endbuild -->
+        <!-- build:css(.tmp) styles/main.css -->
+        <link rel="stylesheet" href="styles/main.css">
+        <!-- endbuild -->
+    </head>
+    <body>
+        <div class="container infographic">
+          <div class="row">
+            <div id="map"></div>
+          </div>
+          <div class="row" id="economic-controls">
+            <div class="row"><div class="controls-header economic">Economy</div></div>
+            <div class="row">
+              <div class="col-md-6 col-sm-12 col-xs-12">
+                <button class="btn infographic-button" id="states_by_percapita">States by Per Capita</button>
+              </div>
+              <div class="col-md-6 col-sm-12 col-xs-12">
+                <button class="btn infographic-button" id="counties_by_percapita">Counties by Per Capita</button>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="political-controls">
+            <div class="row"><div class="controls-header political">Politics</div></div>
+            <button id="counties_by_poll">2012 Senate Poll</button>
+          </div>
+          <button>Toggle path</button>
+        </div>
+    
+        <!--[if lt IE 10]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        <!-- build:js scripts/vendor.js -->
+        <!-- bower:js -->
+        <script src="bower_components/jquery/dist/jquery.js"></script>
+        <!-- endbower -->
+        <!-- endbuild -->
+
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <script>
+            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+            e.src='//www.google-analytics.com/analytics.js';
+            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+            ga('create','UA-XXXXX-X');ga('send','pageview');
+        </script>
+
+        <!-- build:js scripts/plugins.js -->
+        <script src="bower_components/bootstrap/js/affix.js"></script>
+        <script src="bower_components/bootstrap/js/alert.js"></script>
+        <script src="bower_components/bootstrap/js/dropdown.js"></script>
+        <script src="bower_components/bootstrap/js/tooltip.js"></script>
+        <script src="bower_components/bootstrap/js/modal.js"></script>
+        <script src="bower_components/bootstrap/js/transition.js"></script>
+        <script src="bower_components/bootstrap/js/button.js"></script>
+        <script src="bower_components/bootstrap/js/popover.js"></script>
+        <script src="bower_components/bootstrap/js/carousel.js"></script>
+        <script src="bower_components/bootstrap/js/scrollspy.js"></script>
+        <script src="bower_components/bootstrap/js/collapse.js"></script>
+        <script src="bower_components/bootstrap/js/tab.js"></script>
+        <!-- endbuild -->
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="http://d3js.org/topojson.v1.min.js"></script>
+        <!-- build:js({app,.tmp}) scripts/main.js -->
+        <script src="scripts/main.js"></script>
+        <script src="scripts/cartogram.js"></script>
+        <!-- endbuild -->
+        
+        <script>
+        var width = 500,
+            height = 600;
+
+        var projection = d3.geo.mercator()
+            .center([-119.5,37.5])
+            .translate([width / 2, height / 2])
+            .scale(2400)
+
+        var path = d3.geo.path()
+            .projection(projection);
+
+        var svg = d3.select("#map").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("class", "map")
+            .attr("viewBox", "0 0 500 600")
+            .attr("preserveAspectRatio", "xMidYMid");
+            
+        var colorState = d3.scale.linear()
+            .domain([30000, 50000])
+            .range(["#F1E6FA", "#341479"]);
+            
+        var colorCounty = d3.scale.linear()
+            .domain([15000, 65000])
+            .range(["#F1E6FA", "#170049"]);
+        
+        var data = {};
+        
+        var states = [];
+        states.jefferson = d3.set([
+           "Butte", "Colusa", "Del Norte", "Glenn", "Humboldt", "Lake", "Lassen", "Mendocino", "Modoc", "Plumas", "Siskiyou", "Shasta", "Tehama", "Trinity"
+        ]);
+        states.jefferson.perCapita = 36147;
+        states.northCA = d3.set([
+           "Amador", "El Dorado", "Marin", "Napa", "Nevada", "Placer", "Sacramento", "Sierra", "Solano", "Sonoma", "Sutter", "Yolo", "Yuba"
+        ]);
+        states.northCA.perCapita = 48048;
+        states.siliconValley = d3.set([
+           "Alameda", "Contra Costa", "San Benito", "San Francisco", "San Mateo", "Santa Clara", "Santa Cruz", "Monterey"
+        ]);
+        states.siliconValley.perCapita = 63288;
+        states.centralCA = d3.set([
+            "Alpine", "Calaveras", "Fresno", "Inyo", "Kern", "Kings", "Madera", "Mariposa", "Merced", "Mono", "San Joaquin", "Stanislaus", "Tulare", "Tuolumne"
+        ]);
+        states.centralCA.perCapita = 33510;
+        states.westCA = d3.set([
+            "Santa Barbara", "San Luis Obispo", "Los Angeles", "Ventura"
+        ]);
+        states.westCA.perCapita = 44900;
+        states.southCA = d3.set([
+            "Imperial", "Orange", "Riverside", "San Bernardino", "San Diego"
+        ]);
+        states.southCA.perCapita = 42980;
+        
+        
+        d3.json("scripts/ca-counties-topo.json", function(error, ca) {
+          
+          data = ca;
+          
+          for(key in ca.objects.counties.geometries){
+            svg.append("path")
+              .datum(topojson.feature(ca, ca.objects.counties.geometries[key]))
+              .attr("class", "county")
+              .attr("id", ca.objects.counties.geometries[key].properties.name.split(' ').join('_'))
+              .attr("d", path)
+              .attr("style", "fill:"+senateColor(ca.objects.counties.geometries[key]));
+          }
+          
+          svg.append("path")
+              .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+              .attr("class", "county-boundary")
+              .attr("d", path); 
+          
+          for(key in states){
+              svg.append("path")
+                  .datum(topojson.merge(ca, ca.objects.counties.geometries.filter(function(d) {return states[key].has(d.properties.name);})))
+                  .attr("class", "state")
+                  .attr("d", path)
+                  .attr("style", "fill:" + colorState(states[key].perCapita));
+          }
+          
+          showStates();
+              
+          d3.select("#states_by_percapita").on("click", function(){showStates();});
+          d3.select("#counties_by_poll").on("click", function(){showCounties("senate2012");});
+          d3.select("#counties_by_percapita").on("click", function(){showCounties("perCapita");});
+          
+        });
+   
+        //Control functions
+        function showStates(){
+          d3.selectAll(".county").style("visibility", "hidden");
+          d3.selectAll(".county-boundary").style("visibility", "hidden");
+          d3.selectAll(".state").style("fill-opacity", "1.0").style("stroke","white").style("stroke-width","1px");
+        }
+        
+        function showCounties(dataType){
+          switch(dataType){
+            case "perCapita":
+              d3.selectAll(".state").style("fill-opacity", "0.0").style("stroke","black");
+              data.objects.counties.geometries.forEach(function(county){
+                d3.select("#"+county.properties.name.split(' ').join('_'))
+                  .attr("style", "fill:" + colorCounty(county.properties.perCapita));
+              });
+              d3.selectAll(".county").style("visibility", "visible")
+              d3.selectAll(".county-boundary").style("visibility", "visible");
+              break;
+            case "senate2012":
+              d3.selectAll(".state").style("fill-opacity", "0.0").style("stroke","black");
+              data.objects.counties.geometries.forEach(function(county){
+                d3.select("#"+county.properties.name.split(' ').join('_'))
+                  .attr("style", "fill:" + senateColor(county));
+              });
+              d3.selectAll(".county").style("visibility", "visible");
+              d3.selectAll(".county-boundary").style("visibility", "visible");
+              break;
+          }
+        }
+        
+        function senateColor(county){
+          return (county.properties.senate === "r") ? "#F75A49" : "#88A6B0";
+        }
+        
+        
+        var aspect = 500 / 600,
+            chart = $(".map");
+        $(window).on("resize", function() {
+            var targetWidth = chart.parent().width();
+            chart.attr("width", targetWidth);
+            chart.attr("height", targetWidth / aspect);
+            console.log(targetWidth);
+        });
+        
+        </script>
+        
+</body>
+</html>
